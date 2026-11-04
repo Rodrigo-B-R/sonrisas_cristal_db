@@ -1,0 +1,6 @@
+-- Se ejecuta solo la primera vez que se crea la base de datos.
+-- Agrega aqui tus tablas iniciales, por ejemplo:
+-- CREATE TABLE pacientes (
+--     id SERIAL PRIMARY KEY,
+--     nombre TEXT NOT NULL
+-- );

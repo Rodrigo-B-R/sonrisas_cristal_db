@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Sonrisas Cristal",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "sonrisas_cristal",
+      "Username": "postgres",
+      "SSLMode": "prefer"
+    }
+  }
+}
