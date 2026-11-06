@@ -91,3 +91,9 @@ docker compose up -d --build
 
 - **Puerto ocupado:** cambia `POSTGRES_PORT` o `PGADMIN_PORT` en `.env`.
 - **pgAdmin no carga:** espera un minuto y revisa `docker compose logs pgadmin`.
+
+
+# DIAGRAMA DE BASE DE DATOS
+
+
+![Diagrama de base de datos](drawSQL-image-export-2026-11-06.webp)
