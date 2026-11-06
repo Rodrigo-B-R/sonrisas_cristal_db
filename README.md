@@ -34,17 +34,13 @@ Espera ~30–60 s la primera vez (pgAdmin tarda en iniciar).
 - Contraseña: `admin123`
 - El servidor "Sonrisas Cristal" ya aparece registrado. Al conectar, pide la contraseña de Postgres (`POSTGRES_PASSWORD` de `.env`).
 
-**Postgres (desde otra herramienta o tu app):**
+**Postgres:** no se publica ningún puerto en tu PC. Solo es accesible dentro de la red de Docker `sonrisas_net`, donde se llama `postgres` (puerto `5432`). Se conectan así:
 
-| Campo | Valor |
-|---|---|
-| Host | `localhost` |
-| Puerto | `5432` |
-| Usuario | `postgres` |
-| Contraseña | la de `.env` (`cambia_esta_clave` por defecto) |
-| Base de datos | `sonrisas_cristal` |
+- **pgAdmin** (ya registrado): host `postgres`, usuario `postgres`, contraseña `POSTGRES_PASSWORD` de `.env`.
+- **La API** (repo `sonrisas_cristal_api`): se une a `sonrisas_net` y usa `api_user` con `API_DB_PASSWORD` de `.env`. Prende primero esta base y luego la API.
+- **Consola SQL:** `docker exec -it sonrisas_postgres psql -U postgres -d sonrisas_cristal`.
 
-Dentro de pgAdmin el host es `postgres` (nombre del servicio), no `localhost`.
+> Si necesitas una herramienta externa (DBeaver, etc.), agrega temporalmente `ports: ["5432:5432"]` al servicio `postgres` en `docker-compose.yml`.
 
 ## Persistencia de datos
 
