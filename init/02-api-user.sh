@@ -1,7 +1,13 @@
--- Usuario de la API: solo SELECT, INSERT y UPDATE. No puede alterar el esquema.
--- Corre despues de 01-init.sql, asi que las tablas ya existen.
+#!/bin/bash
+# Crea el usuario de la API: solo SELECT, INSERT y UPDATE; no puede alterar el esquema.
+# La contraseña viene de API_DB_PASSWORD (.env); no se escribe en el repositorio.
+# Corre despues de 01-init.sql, asi que las tablas ya existen.
+set -euo pipefail
 
-CREATE ROLE api_user LOGIN PASSWORD '~1Eg~4v6?=L7+km#mJVM!T~=A}DD*@jtqp%aRc#Y^e~TJ'
+: "${API_DB_PASSWORD:?Falta API_DB_PASSWORD en .env}"
+
+psql -v ON_ERROR_STOP=1 -v api_pwd="$API_DB_PASSWORD" --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'EOSQL'
+CREATE ROLE api_user LOGIN PASSWORD :'api_pwd'
     NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
 
 DO $$
@@ -19,3 +25,4 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO api_user;
 -- Tablas y secuencias futuras creadas por el dueño (postgres)
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE ON TABLES TO api_user;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO api_user;
+EOSQL
