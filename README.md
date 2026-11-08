@@ -72,12 +72,56 @@ docker exec -i sonrisas_postgres psql -U postgres -d sonrisas_cristal < respaldo
 
 ## Tablas iniciales
 
-Pon tus `CREATE TABLE` en `init/01-init.sql`. Solo se ejecutan cuando el volumen está vacío. Para reaplicarlos desde cero (borra los datos):
+El esquema completo (tablas, llaves foráneas, restricciones y auditoría) está en `init/01-init.sql`. Solo se ejecuta cuando el volumen está vacío. Para reaplicarlo desde cero (borra los datos):
 
 ```bash
 docker compose down -v
 docker compose up -d --build
+docker compose logs postgres | grep -i error   # debe salir vacío
 ```
+
+Cada quien tiene su propia base local: si alguien cambia el `init/`, los demás deben hacer `git pull` y repetir esos comandos para ver el cambio.
+
+> `motivo_ausencia` y los demás catálogos (`rol`, `puesto`, `turno`, etc.) se crean **vacíos**. Hay que cargarlos antes de registrar, por ejemplo, una falta o incidencia (que exigen un motivo).
+
+## Para la API (cambios del esquema)
+
+Si mantienes `sonrisas_cristal_api`, esto es lo que debes saber:
+
+### 1. Auditoría: fijar el autor en cada transacción
+
+Las tablas `registro_entradas`, `asistencia` y `correccion_registro` se auditan solas con triggers y guardan el resultado en `auditoria` (append-only; `api_user` solo puede leerla). Para que quede **quién** hizo el cambio, la API debe ejecutar esto al inicio de **cada transacción que escriba**, con el id del usuario del JWT:
+
+```sql
+BEGIN;
+SET LOCAL app.id_usuario = 'id';
+-- ...INSERT / UPDATE aquí...
+COMMIT;
+```
+
+- `SET LOCAL` solo vale dentro de una transacción; fuera de ella no hace efecto. Con pool de conexiones, siempre abre la transacción explícitamente.
+- Si no se fija, el cambio se audita igual pero con `id_usuario` en `NULL`.
+- La hora de la auditoría la pone el servidor de base de datos, no la app.
+
+### 2. Columnas renombradas o nuevas
+
+| Antes | Ahora |
+|---|---|
+| `usuario.contraseña` | `usuario.password_hash` (guardar **hash**, nunca texto plano) |
+| `usuario.clave` | `usuario.usuario_login` |
+| `asistencia.motivo` (texto) | `asistencia.id_motivo_ausencia` (id de `motivo_ausencia`) |
+| `motivo_ausencia.nombre` | `motivo_ausencia.descripcion` |
+
+Nuevo en `aviso`: `requiere_confirmacion` (booleano) e `id_estancia` (`NULL` = aviso general). Los destinatarios siguen en `aviso_usuario`; la API crea una fila por destinatario.
+
+### 3. Tablas nuevas
+
+- **`correccion_registro`:** solicitudes de corrección de hora sobre un `registro_entradas`. Nace `pendiente`; al **aprobarla**, la API debe, en la misma transacción, marcarla `aprobada` (con `id_usuario_resuelve` y `resuelto_en`) y actualizar la hora en `registro_entradas`. La base no obliga a ese flujo, lo hace la API.
+- **`auditoria`:** solo lectura para `api_user`.
+
+### 4. Reglas que la base ya valida
+
+`falta` e `incidencia` exigen `id_motivo_ausencia`; una sola asistencia por persona, estancia y día; `registro_entradas.uuid` es único (reenviar el mismo registro offline falla por duplicado: la API debe tratarlo como ya recibido, por ejemplo con `ON CONFLICT (uuid) DO NOTHING`).
 
 ## Cambiar usuario/contraseña/base
 
@@ -91,5 +135,14 @@ docker compose up -d --build
 
 # DIAGRAMA DE BASE DE DATOS
 
+## v2 (actual)
 
-![Diagrama de base de datos](drawSQL-image-export-2026-11-06.webp)
+18 tablas. Incluye `motivo_ausencia`, `correccion_registro` y `auditoria`.
+
+![Diagrama de base de datos v2](SonrisasCristal-DiagramBD.png)
+
+## v1 (anterior)
+
+Versión previa a los últimos cambios del esquema; se conserva solo como referencia.
+
+![Diagrama de base de datos v1](drawSQL-image-export-2026-11-06.webp)

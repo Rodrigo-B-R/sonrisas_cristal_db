@@ -22,6 +22,10 @@ GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO api_user;
 -- Los id IDENTITY usan secuencias; sin esto falla el INSERT
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO api_user;
 
+-- Auditoria append-only: la API solo la lee. Las filas las escribe el trigger
+-- (SECURITY DEFINER), asi nadie puede insertar ni alterar registros de auditoria.
+REVOKE INSERT, UPDATE ON auditoria FROM api_user;
+
 -- Tablas y secuencias futuras creadas por el dueño (postgres)
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE ON TABLES TO api_user;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO api_user;
