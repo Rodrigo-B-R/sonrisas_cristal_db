@@ -90,7 +90,7 @@ Si mantienes `sonrisas_cristal_api`, esto es lo que debes saber:
 
 ### 1. Auditoría: fijar el autor en cada transacción
 
-Las tablas `registro_entradas`, `asistencia` y `correccion_registro` se auditan solas con triggers y guardan el resultado en `auditoria` (append-only; `api_user` solo puede leerla). Para que quede **quién** hizo el cambio, la API debe ejecutar esto al inicio de **cada transacción que escriba**, con el id del usuario del JWT:
+Las tablas `registro_entradas` y `asistencia` se auditan solas con triggers y guardan el resultado en `auditoria` (append-only; `api_user` solo puede leerla). Para que quede **quién** hizo el cambio, la API debe ejecutar esto al inicio de **cada transacción que escriba**, con el id del usuario del JWT:
 
 ```sql
 BEGIN;
@@ -116,7 +116,6 @@ Nuevo en `aviso`: `requiere_confirmacion` (booleano) e `id_estancia` (`NULL` = a
 
 ### 3. Tablas nuevas
 
-- **`correccion_registro`:** solicitudes de corrección de hora sobre un `registro_entradas`. Nace `pendiente`; al **aprobarla**, la API debe, en la misma transacción, marcarla `aprobada` (con `id_usuario_resuelve` y `resuelto_en`) y actualizar la hora en `registro_entradas`. La base no obliga a ese flujo, lo hace la API.
 - **`auditoria`:** solo lectura para `api_user`.
 
 ### 4. Reglas que la base ya valida
@@ -137,7 +136,7 @@ Nuevo en `aviso`: `requiere_confirmacion` (booleano) e `id_estancia` (`NULL` = a
 
 ## v2 (actual)
 
-18 tablas. Incluye `motivo_ausencia`, `correccion_registro` y `auditoria`.
+17 tablas. Incluye `motivo_ausencia` y `auditoria`.
 
 ![Diagrama de base de datos v2](SonrisasCristal-DiagramBD.png)
 
