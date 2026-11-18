@@ -10,7 +10,7 @@ PostgreSQL 17 + pgAdmin 4 en Docker, con datos persistentes.
 
 | Archivo | Para qué sirve |
 |---|---|
-| `Dockerfile` | Imagen de Postgres (`postgres:17`) + scripts de inicio |
+| `Dockerfile` | Imagen de Postgres (`postgres:17-alpine3.24`, orden de texto ICU `es-MX`) + scripts de inicio |
 | `docker-compose.yml` | Levanta Postgres y pgAdmin juntos, con volúmenes |
 | `.env` | Usuarios, contraseñas y puertos (no se sube a git) |
 | `init/*.sql` | Scripts que corren **solo la primera vez** que se crea la BD |
@@ -50,6 +50,22 @@ Los datos viven en volúmenes de Docker (`postgres_data` y `pgadmin_data`), no d
 - `docker compose stop` / `docker compose down`.
 
 > ⚠️ **Se borran solo si** ejecutas `docker compose down -v` o `docker volume rm ...`. No uses `-v` a menos que quieras empezar de cero.
+
+### Cambio de imagen Debian → Alpine
+
+La imagen pasó de `postgres:17` (Debian) a `postgres:17-alpine3.24` con orden de texto ICU `es-MX`. **Un volumen creado con la imagen Debian no se debe abrir con la de Alpine**: los índices de texto (por ejemplo el `UNIQUE` de `usuario_login` y `correo`) se ordenaron con otras reglas y dejan de ser confiables, aunque Postgres arranque sin error.
+
+- Si tu base local es de pruebas: `docker compose down -v` y `docker compose up -d --build` (empieza vacía; luego corre el seed de la API).
+- Si tiene datos que quieres conservar, migra solo los datos (el esquema y los usuarios los crea el `init/` de la imagen nueva):
+  ```bash
+  # 1. Con la imagen VIEJA todavía corriendo: respaldar solo datos, sin disparar triggers al restaurar
+  docker exec sonrisas_postgres pg_dump -U postgres --data-only --disable-triggers sonrisas_cristal > datos.sql
+  # 2. Recrear con la imagen nueva (borra el volumen viejo: asegúrate de tener datos.sql)
+  docker compose down -v && docker compose up -d --build
+  # 3. Restaurar cuando el contenedor esté healthy
+  docker exec -i sonrisas_postgres psql -U postgres -d sonrisas_cristal -v ON_ERROR_STOP=1 < datos.sql
+  ```
+- Para comprobar con qué se creó: `SELECT datlocprovider, datlocale FROM pg_database WHERE datname = current_database();` → con Alpine debe salir `i | es-MX`.
 
 ## Comandos útiles
 
