@@ -110,7 +110,7 @@ Las tablas `registro_entradas` y `asistencia` se auditan solas con triggers y gu
 
 ```sql
 BEGIN;
-SET LOCAL app.id_usuario = 'id';
+SET LOCAL app.id_usuario = '<uuid del usuario>';
 -- ...INSERT / UPDATE aquí...
 COMMIT;
 ```
@@ -136,7 +136,7 @@ Nuevo en `aviso`: `requiere_confirmacion` (booleano) e `id_estancia` (`NULL` = a
 
 ### 4. Reglas que la base ya valida
 
-`falta` e `incidencia` exigen `id_motivo_ausencia`; una sola asistencia por persona, estancia y día; `registro_entradas.uuid` es único (reenviar el mismo registro offline falla por duplicado: la API debe tratarlo como ya recibido, por ejemplo con `ON CONFLICT (uuid) DO NOTHING`).
+`falta` e `incidencia` exigen `id_motivo_ausencia`; una sola asistencia por persona, estancia y día. `registro_entradas.uuid` es único (reenviar el mismo registro offline falla por duplicado: la API debe tratarlo como ya recibido, por ejemplo con `ON CONFLICT (uuid) DO NOTHING`).
 
 ## Cambiar usuario/contraseña/base
 
