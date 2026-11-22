@@ -136,7 +136,7 @@ Nuevo en `aviso`: `requiere_confirmacion` (booleano) e `id_estancia` (`NULL` = a
 
 ### 4. Reglas que la base ya valida
 
-`falta` e `incidencia` exigen `id_motivo_ausencia`; una sola asistencia por persona, estancia y día. Los ids son UUID generados por la base (`gen_random_uuid()`); para evitar duplicados al reenviar un registro offline, la app puede generar el `id` del registro y la API debe tratar el duplicado de PK como ya recibido (`ON CONFLICT (id) DO NOTHING`).
+`falta` e `incidencia` exigen `id_motivo_ausencia`; una sola asistencia por persona, estancia y día. `registro_entradas.uuid` es único (reenviar el mismo registro offline falla por duplicado: la API debe tratarlo como ya recibido, por ejemplo con `ON CONFLICT (uuid) DO NOTHING`).
 
 ## Cambiar usuario/contraseña/base
 

@@ -76,7 +76,8 @@ CREATE TABLE movimiento_usuario (
     observaciones             VARCHAR(255),
     id_causa_baja             UUID,  -- solo aplica a bajas
     id_estancia_origen        UUID,  -- no aplica a altas
-    id_estancia_destino       UUID   -- no aplica a bajas
+    id_estancia_destino       UUID,  -- no aplica a bajas
+    creado_en                 TIMESTAMP(3) WITH TIME ZONE NOT NULL DEFAULT clock_timestamp()
 );
 
 CREATE TABLE aviso (
@@ -86,7 +87,8 @@ CREATE TABLE aviso (
     id_usuario_envia UUID NOT NULL,
     mensaje          VARCHAR(255) NOT NULL,
     requiere_confirmacion BOOLEAN NOT NULL DEFAULT FALSE,  -- TRUE: cada destinatario debe confirmar lectura
-    id_estancia      UUID  -- estancia a la que aplica; NULL = general (todas las estancias)
+    id_estancia      UUID,  -- estancia a la que aplica; NULL = general (todas las estancias)
+    creado_en        TIMESTAMP(3) WITH TIME ZONE NOT NULL DEFAULT clock_timestamp()
 );
 
 CREATE TABLE aviso_usuario (
@@ -103,7 +105,8 @@ CREATE TABLE horario (
     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     id_usuario    UUID NOT NULL,
     vigente_hasta DATE NOT NULL,
-    vigente_desde DATE NOT NULL
+    vigente_desde DATE NOT NULL,
+    creado_en     TIMESTAMP(3) WITH TIME ZONE NOT NULL DEFAULT clock_timestamp()
 );
 
 CREATE TABLE horario_dia (
@@ -123,6 +126,7 @@ CREATE TABLE registro_entradas (
     origen_registro     VARCHAR(255) NOT NULL,
     id_usuario_registro UUID NOT NULL,
     id_sala             UUID NOT NULL,
+    uuid                UUID NOT NULL,
     id_turno            UUID NOT NULL,
     dentro_de_zona      BOOLEAN NOT NULL  -- FALSE = "fuera de zona", la Responsable lo revisa
 );
@@ -140,7 +144,7 @@ CREATE TABLE asistencia (
 -- Auditoria inmutable (append-only, R-08): quien hizo que y cuando, hora del servidor.
 -- Se llena sola con triggers (ver al final); nadie la escribe directamente.
 CREATE TABLE auditoria (
-    id               BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     id_usuario       UUID,  -- autor; viene de app.id_usuario (lo fija la API). NULL si no se fijo
     accion           VARCHAR(255) NOT NULL,
     tabla            VARCHAR(255) NOT NULL,
@@ -226,7 +230,8 @@ ALTER TABLE horario
 
 ALTER TABLE registro_entradas
     ADD CONSTRAINT registro_entradas_salida_check
-        CHECK (fecha_hora_salida IS NULL OR fecha_hora_salida > fecha_hora_entrada);
+        CHECK (fecha_hora_salida IS NULL OR fecha_hora_salida > fecha_hora_entrada),
+    ADD CONSTRAINT registro_entradas_uuid_unico UNIQUE (uuid);
 
 ALTER TABLE ubicacion
     ADD CONSTRAINT ubicacion_latitud_check   CHECK (latitud  BETWEEN -90  AND 90),
